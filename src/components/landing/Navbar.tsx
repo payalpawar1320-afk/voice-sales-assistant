@@ -1,15 +1,13 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Mic } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 
 export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-lg">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-          <div className="gradient-primary rounded-lg p-1.5">
-            <Mic className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="VoxaFlow" className="h-8 w-8 rounded-lg object-cover" />
           VoxaFlow
         </Link>
         <div className="hidden md:flex items-center gap-8">

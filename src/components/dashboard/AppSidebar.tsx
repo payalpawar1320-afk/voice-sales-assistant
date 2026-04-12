@@ -1,5 +1,5 @@
-import { Users, MessageSquare, CreditCard, LayoutDashboard, LogOut, Mic } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { Users, MessageSquare, CreditCard, LayoutDashboard, LogOut } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
