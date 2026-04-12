@@ -1,6 +1,7 @@
 import { Users, MessageSquare, CreditCard, LayoutDashboard, LogOut } from "lucide-react";
+import { NavLink } from "@/components/NavLink";
 import logo from "@/assets/logo.jpg";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -30,9 +31,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <div className="p-4 flex items-center gap-2">
-          <div className="gradient-primary rounded-lg p-1.5 flex-shrink-0">
-            <Mic className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="VoxaFlow" className="h-7 w-7 rounded-lg object-cover flex-shrink-0" />
           {!collapsed && <span className="font-bold text-lg">VoxaFlow</span>}
         </div>
         <SidebarGroup>
