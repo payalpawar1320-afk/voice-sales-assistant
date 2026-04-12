@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mic } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
 
 export default function Auth() {
@@ -27,9 +27,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 font-bold text-2xl mb-2">
-            <div className="gradient-primary rounded-lg p-1.5">
-              <Mic className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="VoxaFlow" className="h-9 w-9 rounded-lg object-cover" />
             VoxaFlow
           </Link>
           <p className="text-muted-foreground text-sm">
