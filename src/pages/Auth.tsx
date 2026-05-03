@@ -1,25 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import logo from "@/assets/logo.jpg";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const [isSignup, setIsSignup] = useState(searchParams.get("mode") === "signup");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { session } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (session) navigate("/dashboard", { replace: true });
+  }, [session, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const email = String(f.get("email"));
+    const password = String(f.get("password"));
     setLoading(true);
-    setTimeout(() => {
+    try {
+      if (isSignup) {
+        const { error } = await supabase.auth.signUp({
+          email, password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+            data: {
+              full_name: String(f.get("fullName") || ""),
+              phone: String(f.get("phone") || ""),
+            },
+          },
+        });
+        if (error) throw error;
+        toast.success("Account created! Check your email to verify.");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Welcome back!");
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      toast.error(err.message ?? "Something went wrong");
+    } finally {
       setLoading(false);
-      toast.success(isSignup ? "Account created!" : "Welcome back!");
-      navigate("/dashboard");
-    }, 800);
+    }
   };
 
   return (
@@ -40,21 +70,21 @@ export default function Auth() {
               <>
                 <div>
                   <Label htmlFor="fullName">Full Name</Label>
-                  <Input id="fullName" placeholder="Juan dela Cruz" required className="mt-1.5" />
+                  <Input id="fullName" name="fullName" placeholder="Juan dela Cruz" required className="mt-1.5" />
                 </div>
                 <div>
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" placeholder="+63 912 345 6789" required className="mt-1.5" />
+                  <Input id="phone" name="phone" type="tel" placeholder="+63 912 345 6789" required className="mt-1.5" />
                 </div>
               </>
             )}
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" required className="mt-1.5" />
+              <Input id="email" name="email" type="email" placeholder="you@example.com" required className="mt-1.5" />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" required className="mt-1.5" />
+              <Input id="password" name="password" type="password" placeholder="••••••••" required minLength={6} className="mt-1.5" />
             </div>
             <Button type="submit" className="w-full gradient-primary border-0 h-11" disabled={loading}>
               {loading ? "Please wait..." : isSignup ? "Create Account" : "Sign In"}
