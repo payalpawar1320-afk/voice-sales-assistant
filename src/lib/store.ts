@@ -1,43 +1,83 @@
-import { useState, useCallback } from "react";
-import type { Lead, Interaction, Payment, User } from "./types";
+import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./auth";
+import type { Lead, Interaction, Payment, LeadStatus } from "./types";
+import { toast } from "sonner";
 
-const DEMO_LEADS: Lead[] = [
-  { id: "1", name: "Maria Santos", phone: "+63 912 345 6789", dealValue: 25000, status: "New", createdAt: new Date().toISOString() },
-  { id: "2", name: "Ahmad Rahman", phone: "+60 11 2345 6789", dealValue: 48000, status: "Contacted", createdAt: new Date(Date.now() - 86400000).toISOString() },
-  { id: "3", name: "Nguyen Thi", phone: "+84 90 123 4567", dealValue: 120000, status: "Negotiation", createdAt: new Date(Date.now() - 172800000).toISOString() },
-];
-
-const DEMO_INTERACTIONS: Interaction[] = [
-  { id: "1", leadId: "1", type: "call", content: "Initial discovery call, interested in premium plan", timestamp: new Date().toISOString() },
-  { id: "2", leadId: "2", type: "message", content: "Sent pricing proposal via WhatsApp", timestamp: new Date(Date.now() - 3600000).toISOString(), followUpDate: new Date(Date.now() + 86400000).toISOString() },
-];
-
-const DEMO_PAYMENTS: Payment[] = [
-  { id: "1", leadId: "3", amount: 60000, status: "Paid", dueDate: new Date().toISOString() },
-  { id: "2", leadId: "2", amount: 48000, status: "Pending", dueDate: new Date(Date.now() + 604800000).toISOString() },
-];
+// Row mappers (DB snake_case <-> UI camelCase)
+const mapLead = (r: any): Lead => ({
+  id: r.id, name: r.name, phone: r.phone,
+  dealValue: Number(r.deal_value), status: r.status, createdAt: r.created_at,
+});
+const mapInteraction = (r: any): Interaction => ({
+  id: r.id, leadId: r.lead_id, type: r.type, content: r.content,
+  timestamp: r.created_at, followUpDate: r.follow_up_date ?? undefined,
+});
+const mapPayment = (r: any): Payment => ({
+  id: r.id, leadId: r.lead_id, amount: Number(r.amount), status: r.status,
+  dueDate: r.due_date, paymentLink: r.payment_link ?? undefined,
+});
 
 export function useStore() {
-  const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
-  const [interactions, setInteractions] = useState<Interaction[]>(DEMO_INTERACTIONS);
-  const [payments, setPayments] = useState<Payment[]>(DEMO_PAYMENTS);
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuth();
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addLead = useCallback((lead: Omit<Lead, "id" | "createdAt">) => {
-    setLeads(prev => [...prev, { ...lead, id: crypto.randomUUID(), createdAt: new Date().toISOString() }]);
-  }, []);
+  const refresh = useCallback(async () => {
+    if (!user) return;
+    const [l, i, p] = await Promise.all([
+      supabase.from("leads").select("*").order("created_at", { ascending: false }),
+      supabase.from("interactions").select("*").order("created_at", { ascending: false }),
+      supabase.from("payments").select("*").order("created_at", { ascending: false }),
+    ]);
+    if (l.data) setLeads(l.data.map(mapLead));
+    if (i.data) setInteractions(i.data.map(mapInteraction));
+    if (p.data) setPayments(p.data.map(mapPayment));
+    setLoading(false);
+  }, [user]);
 
-  const updateLeadStatus = useCallback((id: string, status: Lead["status"]) => {
+  useEffect(() => { if (user) refresh(); }, [user, refresh]);
+
+  const addLead = useCallback(async (lead: Omit<Lead, "id" | "createdAt">) => {
+    if (!user) return;
+    const { data, error } = await supabase.from("leads").insert({
+      user_id: user.id, name: lead.name, phone: lead.phone,
+      deal_value: lead.dealValue, status: lead.status,
+    }).select().single();
+    if (error) return toast.error(error.message);
+    setLeads(prev => [mapLead(data), ...prev]);
+    toast.success("Lead added");
+  }, [user]);
+
+  const updateLeadStatus = useCallback(async (id: string, status: LeadStatus) => {
+    const { error } = await supabase.from("leads").update({ status }).eq("id", id);
+    if (error) return toast.error(error.message);
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
   }, []);
 
-  const addInteraction = useCallback((interaction: Omit<Interaction, "id" | "timestamp">) => {
-    setInteractions(prev => [...prev, { ...interaction, id: crypto.randomUUID(), timestamp: new Date().toISOString() }]);
-  }, []);
+  const addInteraction = useCallback(async (it: Omit<Interaction, "id" | "timestamp">) => {
+    if (!user || !it.leadId) return;
+    const { data, error } = await supabase.from("interactions").insert({
+      user_id: user.id, lead_id: it.leadId, type: it.type, content: it.content,
+      follow_up_date: it.followUpDate || null,
+    }).select().single();
+    if (error) return toast.error(error.message);
+    setInteractions(prev => [mapInteraction(data), ...prev]);
+    toast.success("Interaction logged");
+  }, [user]);
 
-  const addPayment = useCallback((payment: Omit<Payment, "id">) => {
-    setPayments(prev => [...prev, { ...payment, id: crypto.randomUUID() }]);
-  }, []);
+  const addPayment = useCallback(async (pay: Omit<Payment, "id">) => {
+    if (!user) return;
+    const { data, error } = await supabase.from("payments").insert({
+      user_id: user.id, lead_id: pay.leadId, amount: pay.amount, status: pay.status,
+      due_date: pay.dueDate.slice(0, 10), payment_link: pay.paymentLink || null,
+    }).select().single();
+    if (error) return toast.error(error.message);
+    setPayments(prev => [mapPayment(data), ...prev]);
+    toast.success("Payment added");
+  }, [user]);
 
-  return { leads, interactions, payments, user, setUser, addLead, updateLeadStatus, addInteraction, addPayment };
+  return { leads, interactions, payments, loading, addLead, updateLeadStatus, addInteraction, addPayment, refresh };
 }
