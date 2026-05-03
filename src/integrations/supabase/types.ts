@@ -14,7 +14,148 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      interactions: {
+        Row: {
+          content: string
+          created_at: string
+          follow_up_date: string | null
+          id: string
+          lead_id: string
+          type: Database["public"]["Enums"]["interaction_type"]
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          lead_id: string
+          type: Database["public"]["Enums"]["interaction_type"]
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          lead_id?: string
+          type?: Database["public"]["Enums"]["interaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          created_at: string
+          deal_value: number
+          id: string
+          name: string
+          phone: string
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deal_value?: number
+          id?: string
+          name: string
+          phone: string
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deal_value?: number
+          id?: string
+          name?: string
+          phone?: string
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          lead_id: string
+          payment_link: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          lead_id: string
+          payment_link?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          lead_id?: string
+          payment_link?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +164,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      interaction_type: "call" | "message" | "note"
+      lead_status: "New" | "Contacted" | "Negotiation" | "Closed"
+      payment_status: "Pending" | "Paid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +293,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      interaction_type: ["call", "message", "note"],
+      lead_status: ["New", "Contacted", "Negotiation", "Closed"],
+      payment_status: ["Pending", "Paid"],
+    },
   },
 } as const
