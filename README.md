@@ -57,6 +57,7 @@ git clone   [https://github.com/payalpawar1320-afk/voice-sales-assistant.git]
 cd voxaflow
 npm install
 npm run dev
+---
 ## summary
 VoxaFlow is a mobile-first CRM designed for field sales teams who rely on calls and WhatsApp. Instead of filling out complex forms, users can log deals, track leads, and record interactions using voice or simple inputs. It helps sales reps stay organized, follow up on time, and manage payments—without needing laptops or traditional CRM systems.
 
